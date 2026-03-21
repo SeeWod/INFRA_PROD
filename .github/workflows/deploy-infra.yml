@@ -1,0 +1,59 @@
+name: infra-deploy
+on:
+  workflow_dispatch:
+  push:
+    branches: [ main ]
+    tags:
+      - 'v*.*.*'
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Upload infra compose
+        uses: appleboy/scp-action@v0.1.7
+        with:
+          host: ${{ secrets.PROD_SSH_HOST }}
+          username: ${{ secrets.PROD_SSH_USER }}
+          key: ${{ secrets.PROD_SSH_KEY }}
+          source: "INFRA_PROD/deploy/docker-compose.yml"
+          target: ${{ secrets.INFRA_DEPLOY_PATH }}/deploy
+          overwrite: true
+      - name: Upload Nginx main conf
+        uses: appleboy/scp-action@v0.1.7
+        with:
+          host: ${{ secrets.PROD_SSH_HOST }}
+          username: ${{ secrets.PROD_SSH_USER }}
+          key: ${{ secrets.PROD_SSH_KEY }}
+          source: "INFRA_PROD/nginx/nginx.conf"
+          target: ${{ secrets.INFRA_DEPLOY_PATH }}/nginx
+          overwrite: true
+      - name: Upload Nginx conf.d
+        uses: appleboy/scp-action@v0.1.7
+        with:
+          host: ${{ secrets.PROD_SSH_HOST }}
+          username: ${{ secrets.PROD_SSH_USER }}
+          key: ${{ secrets.PROD_SSH_KEY }}
+          source: "INFRA_PROD/nginx/conf.d/*"
+          target: ${{ secrets.INFRA_DEPLOY_PATH }}/nginx/conf.d
+      - name: Deploy infra over SSH
+        uses: appleboy/ssh-action@v1.0.3
+        env:
+          INFRA_DEPLOY_PATH: ${{ secrets.INFRA_DEPLOY_PATH }}
+          INFRA_NETWORK_NAME: ${{ secrets.INFRA_NETWORK_NAME != '' && secrets.INFRA_NETWORK_NAME || vars.INFRA_NETWORK_NAME }}
+        with:
+          host: ${{ secrets.PROD_SSH_HOST }}
+          username: ${{ secrets.PROD_SSH_USER }}
+          key: ${{ secrets.PROD_SSH_KEY }}
+          envs: INFRA_DEPLOY_PATH,INFRA_NETWORK_NAME
+          script: |
+            set -e
+            mkdir -p "$INFRA_DEPLOY_PATH/nginx/conf.d" "$INFRA_DEPLOY_PATH/static" "$INFRA_DEPLOY_PATH/data/mongo" "$INFRA_DEPLOY_PATH/data/redis"
+            cd "$INFRA_DEPLOY_PATH/deploy"
+            NET="${INFRA_NETWORK_NAME:-apps}"
+            docker network ls --format "{{.Name}}" | grep -Fx "$NET" || docker network create "$NET"
+            docker compose -f docker-compose.yml pull
+            docker compose -f docker-compose.yml up -d
+            docker ps
+            docker exec gateway nginx -t || true
+            docker exec gateway nginx -s reload || true
