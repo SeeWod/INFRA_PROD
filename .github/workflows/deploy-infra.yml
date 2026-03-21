@@ -38,7 +38,7 @@ jobs:
           username: ${{ secrets.PROD_SSH_USER }}
           key: ${{ secrets.PROD_SSH_KEY }}
           source: "deploy/docker-compose.yml"
-          target: ${{ secrets.INFRA_DEPLOY_PATH }}/deploy
+          target: ${{ secrets.INFRA_DEPLOY_PATH }}
           overwrite: true
       - name: Upload Nginx main conf
         uses: appleboy/scp-action@v0.1.7
