@@ -30,6 +30,15 @@ jobs:
                          "$INFRA_DEPLOY_PATH/static" \
                          "$INFRA_DEPLOY_PATH/data/mongo" \
                          "$INFRA_DEPLOY_PATH/data/redis" || mkdir -p "$INFRA_DEPLOY_PATH/deploy" "$INFRA_DEPLOY_PATH/nginx/conf.d" "$INFRA_DEPLOY_PATH/static" "$INFRA_DEPLOY_PATH/data/mongo" "$INFRA_DEPLOY_PATH/data/redis"
+            # 清理错误的目录结构（若存在）
+            if [ -d "$INFRA_DEPLOY_PATH/nginx/nginx.conf" ]; then
+              echo "Removing wrong directory: $INFRA_DEPLOY_PATH/nginx/nginx.conf"
+              sudo rm -rf "$INFRA_DEPLOY_PATH/nginx/nginx.conf" || rm -rf "$INFRA_DEPLOY_PATH/nginx/nginx.conf"
+            fi
+            if [ -d "$INFRA_DEPLOY_PATH/nginx/nginx" ]; then
+              echo "Removing wrong directory: $INFRA_DEPLOY_PATH/nginx/nginx"
+              sudo rm -rf "$INFRA_DEPLOY_PATH/nginx/nginx" || rm -rf "$INFRA_DEPLOY_PATH/nginx/nginx"
+            fi
             sudo chown $(id -un):$(id -gn) -R "$INFRA_DEPLOY_PATH" || true
       - name: Upload infra compose
         uses: appleboy/scp-action@v0.1.7
@@ -40,14 +49,14 @@ jobs:
           source: "deploy/docker-compose.yml"
           target: ${{ secrets.INFRA_DEPLOY_PATH }}
           overwrite: true
-      - name: Upload Nginx main conf
+      - name: Upload Nginx directory (conf + conf.d)
         uses: appleboy/scp-action@v0.1.7
         with:
           host: ${{ secrets.PROD_SSH_HOST }}
           username: ${{ secrets.PROD_SSH_USER }}
           key: ${{ secrets.PROD_SSH_KEY }}
-          source: "nginx/nginx.conf"
-          target: ${{ secrets.INFRA_DEPLOY_PATH }}/nginx
+          source: "nginx/*"
+          target: ${{ secrets.INFRA_DEPLOY_PATH }}
           overwrite: true
       - name: Deploy infra over SSH
         uses: appleboy/ssh-action@v1.0.3
@@ -66,6 +75,10 @@ jobs:
             if [ -d "$INFRA_DEPLOY_PATH/nginx/nginx.conf" ]; then
               echo "Found directory at $INFRA_DEPLOY_PATH/nginx/nginx.conf; removing and expecting file upload"
               sudo rm -rf "$INFRA_DEPLOY_PATH/nginx/nginx.conf" || rm -rf "$INFRA_DEPLOY_PATH/nginx/nginx.conf"
+            fi
+            if [ -d "$INFRA_DEPLOY_PATH/nginx/nginx" ]; then
+              echo "Found nested directory at $INFRA_DEPLOY_PATH/nginx/nginx; removing"
+              sudo rm -rf "$INFRA_DEPLOY_PATH/nginx/nginx" || rm -rf "$INFRA_DEPLOY_PATH/nginx/nginx"
             fi
             if [ ! -f "$INFRA_DEPLOY_PATH/nginx/nginx.conf" ]; then
               echo "WARNING: nginx.conf not found at $INFRA_DEPLOY_PATH/nginx/nginx.conf"
