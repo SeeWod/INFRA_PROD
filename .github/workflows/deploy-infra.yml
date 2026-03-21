@@ -62,6 +62,15 @@ jobs:
           script: |
             set -e
             mkdir -p "$INFRA_DEPLOY_PATH/nginx/conf.d" "$INFRA_DEPLOY_PATH/static" "$INFRA_DEPLOY_PATH/data/mongo" "$INFRA_DEPLOY_PATH/data/redis"
+            # 修复如果曾经因为未上传文件而导致 Docker 创建了同名目录的情况
+            if [ -d "$INFRA_DEPLOY_PATH/nginx/nginx.conf" ]; then
+              echo "Found directory at $INFRA_DEPLOY_PATH/nginx/nginx.conf; removing and expecting file upload"
+              sudo rm -rf "$INFRA_DEPLOY_PATH/nginx/nginx.conf" || rm -rf "$INFRA_DEPLOY_PATH/nginx/nginx.conf"
+            fi
+            if [ ! -f "$INFRA_DEPLOY_PATH/nginx/nginx.conf" ]; then
+              echo "WARNING: nginx.conf not found at $INFRA_DEPLOY_PATH/nginx/nginx.conf"
+              echo "You must upload nginx/nginx.conf before compose up to avoid mount errors."
+            fi
             cd "$INFRA_DEPLOY_PATH/deploy"
             NET="${INFRA_NETWORK_NAME:-apps}"
             docker network ls --format "{{.Name}}" | grep -Fx "$NET" || docker network create "$NET"
