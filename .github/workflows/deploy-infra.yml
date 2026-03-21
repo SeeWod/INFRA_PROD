@@ -10,6 +10,27 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
+      - name: Prepare remote directories
+        uses: appleboy/ssh-action@v1.0.3
+        env:
+          INFRA_DEPLOY_PATH: ${{ secrets.INFRA_DEPLOY_PATH }}
+        with:
+          host: ${{ secrets.PROD_SSH_HOST }}
+          username: ${{ secrets.PROD_SSH_USER }}
+          key: ${{ secrets.PROD_SSH_KEY }}
+          envs: INFRA_DEPLOY_PATH
+          script: |
+            set -e
+            if [ -z "$INFRA_DEPLOY_PATH" ]; then
+              echo "ERROR: INFRA_DEPLOY_PATH is empty"
+              exit 1
+            fi
+            sudo mkdir -p "$INFRA_DEPLOY_PATH/deploy" \
+                         "$INFRA_DEPLOY_PATH/nginx/conf.d" \
+                         "$INFRA_DEPLOY_PATH/static" \
+                         "$INFRA_DEPLOY_PATH/data/mongo" \
+                         "$INFRA_DEPLOY_PATH/data/redis" || mkdir -p "$INFRA_DEPLOY_PATH/deploy" "$INFRA_DEPLOY_PATH/nginx/conf.d" "$INFRA_DEPLOY_PATH/static" "$INFRA_DEPLOY_PATH/data/mongo" "$INFRA_DEPLOY_PATH/data/redis"
+            sudo chown $(id -un):$(id -gn) -R "$INFRA_DEPLOY_PATH" || true
       - name: Upload infra compose
         uses: appleboy/scp-action@v0.1.7
         with:
