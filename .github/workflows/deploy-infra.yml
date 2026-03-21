@@ -16,7 +16,7 @@ jobs:
           host: ${{ secrets.PROD_SSH_HOST }}
           username: ${{ secrets.PROD_SSH_USER }}
           key: ${{ secrets.PROD_SSH_KEY }}
-          source: "INFRA_PROD/deploy/docker-compose.yml"
+          source: "deploy/docker-compose.yml"
           target: ${{ secrets.INFRA_DEPLOY_PATH }}/deploy
           overwrite: true
       - name: Upload Nginx main conf
@@ -25,17 +25,9 @@ jobs:
           host: ${{ secrets.PROD_SSH_HOST }}
           username: ${{ secrets.PROD_SSH_USER }}
           key: ${{ secrets.PROD_SSH_KEY }}
-          source: "INFRA_PROD/nginx/nginx.conf"
+          source: "nginx/nginx.conf"
           target: ${{ secrets.INFRA_DEPLOY_PATH }}/nginx
           overwrite: true
-      - name: Upload Nginx conf.d
-        uses: appleboy/scp-action@v0.1.7
-        with:
-          host: ${{ secrets.PROD_SSH_HOST }}
-          username: ${{ secrets.PROD_SSH_USER }}
-          key: ${{ secrets.PROD_SSH_KEY }}
-          source: "INFRA_PROD/nginx/conf.d/*"
-          target: ${{ secrets.INFRA_DEPLOY_PATH }}/nginx/conf.d
       - name: Deploy infra over SSH
         uses: appleboy/ssh-action@v1.0.3
         env:
