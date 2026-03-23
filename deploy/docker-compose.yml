@@ -9,6 +9,7 @@ services:
       - ../nginx/nginx.conf:/etc/nginx/nginx.conf:ro
       - ../nginx/conf.d:/etc/nginx/conf.d:ro
       - ../static:/srv/static:ro
+      - ../uploads:/srv/uploads:ro
     networks:
       - apps
     restart: unless-stopped
