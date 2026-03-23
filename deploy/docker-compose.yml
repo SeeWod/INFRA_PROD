@@ -10,6 +10,8 @@ services:
       - ../nginx/conf.d:/etc/nginx/conf.d:ro
       - ../static:/srv/static:ro
       - ../uploads:/srv/uploads:ro
+      - ../letsencrypt:/srv/letsencrypt:ro
+      - ../cert:/etc/letsencrypt:ro
     networks:
       - apps
     restart: unless-stopped

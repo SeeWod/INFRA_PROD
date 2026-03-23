@@ -28,6 +28,8 @@ jobs:
             sudo mkdir -p "$INFRA_DEPLOY_PATH/deploy" \
                          "$INFRA_DEPLOY_PATH/nginx/conf.d" \
                          "$INFRA_DEPLOY_PATH/static" \
+                         "$INFRA_DEPLOY_PATH/letsencrypt" \
+                         "$INFRA_DEPLOY_PATH/cert" \
                          "$INFRA_DEPLOY_PATH/uploads" \
                          "$INFRA_DEPLOY_PATH/data/mongo" \
                          "$INFRA_DEPLOY_PATH/data/redis" || mkdir -p "$INFRA_DEPLOY_PATH/deploy" "$INFRA_DEPLOY_PATH/nginx/conf.d" "$INFRA_DEPLOY_PATH/static" "$INFRA_DEPLOY_PATH/data/mongo" "$INFRA_DEPLOY_PATH/data/redis"
