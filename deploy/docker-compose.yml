@@ -36,5 +36,5 @@ services:
       - apps
 networks:
   apps:
-    name: ${INFRA_NETWORK_NAME:-apps}
+    name: ${INFRA_NETWORK_NAME:-infra}
     external: true
