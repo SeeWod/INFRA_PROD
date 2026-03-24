@@ -1,0 +1,31 @@
+name: renew-ssl
+on:
+  workflow_dispatch:
+  schedule:
+    - cron: '0 3 1 * *'  # monthly at 03:00
+jobs:
+  renew:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Renew certificates over SSH
+        uses: appleboy/ssh-action@v1.0.3
+        env:
+          INFRA_DEPLOY_PATH: ${{ secrets.INFRA_DEPLOY_PATH }}
+        with:
+          host: ${{ secrets.PROD_SSH_HOST }}
+          username: ${{ secrets.PROD_SSH_USER }}
+          key: ${{ secrets.PROD_SSH_KEY }}
+          envs: INFRA_DEPLOY_PATH
+          script: |
+            set -e
+            if [ -z "$INFRA_DEPLOY_PATH" ]; then
+              echo "ERROR: INFRA_DEPLOY_PATH is empty"; exit 1
+            fi
+            # ensure directories exist
+            sudo mkdir -p "$INFRA_DEPLOY_PATH/letsencrypt" "$INFRA_DEPLOY_PATH/cert" || mkdir -p "$INFRA_DEPLOY_PATH/letsencrypt" "$INFRA_DEPLOY_PATH/cert"
+            # renew
+            docker run --rm \
+              -v "$INFRA_DEPLOY_PATH/cert:/etc/letsencrypt" \
+              -v "$INFRA_DEPLOY_PATH/letsencrypt:/var/www/letsencrypt" \
+              certbot/certbot renew --webroot -w /var/www/letsencrypt \
+              --deploy-hook "docker exec gateway nginx -t && docker exec gateway nginx -s reload" || true
